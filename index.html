@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BetLock — Bitcoin Escrow</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #080a0f;
+    --surface: #0e1118;
+    --surface2: #141820;
+    --border: #1e2535;
+    --border2: #2a3448;
+    --gold: #c9a84c;
+    --gold2: #e8c96a;
+    --gold-dim: rgba(201,168,76,0.15);
+    --green: #3ecf8e;
+    --green-dim: rgba(62,207,142,0.12);
+    --red: #f56565;
+    --red-dim: rgba(245,101,101,0.12);
+    --text: #e8edf5;
+    --text2: #8a9bb5;
+    --text3: #4a5a78;
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px 64px;
+  }
+
+  /* Noise overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Radial glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 600px;
+    height: 400px;
+    background: radial-gradient(ellipse, rgba(201,168,76,0.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { width: 100%; max-width: 760px; position: relative; z-index: 1; }
+
+  /* Header */
+  header { text-align: center; margin-bottom: 40px; }
+  .logo {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 2.6rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--gold2);
+    line-height: 1;
+  }
+  .logo span { color: var(--text3); font-weight: 400; }
+  .tagline { color: var(--text2); font-size: 0.9rem; margin-top: 8px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* Step indicator */
+  .steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 36px;
+  }
+  .step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text3);
+    transition: all 0.3s;
+    background: var(--surface);
+  }
+  .step-dot.active { border-color: var(--gold); color: var(--gold); box-shadow: 0 0 12px rgba(201,168,76,0.25); }
+  .step-dot.done { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+  .step-label { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; }
+  .step-label.active { color: var(--gold); }
+  .step-line { width: 48px; height: 1px; background: var(--border); margin: 0 4px; margin-bottom: 22px; flex-shrink: 0; }
+  .step-line.done { background: var(--green); opacity: 0.4; }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .card-sub { color: var(--text2); font-size: 0.875rem; margin-bottom: 28px; line-height: 1.5; }
+
+  /* Grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 560px) { .grid2 { grid-template-columns: 1fr; } }
+
+  /* Party block */
+  .party-block {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+  }
+  .party-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+
+  /* Form */
+  .field { margin-bottom: 16px; }
+  label { display: block; font-size: 0.78rem; color: var(--text2); margin-bottom: 6px; letter-spacing: 0.03em; }
+  input, textarea {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 10px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus { border-color: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.08); }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .field-full { margin-bottom: 16px; }
+
+  /* Buttons */
+  .btn {
+    padding: 12px 28px;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    font-size: 0.9rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary {
+    background: var(--gold);
+    color: #080a0f;
+  }
+  .btn-primary:hover { background: var(--gold2); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(201,168,76,0.3); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid var(--border2);
+  }
+  .btn-ghost:hover { border-color: var(--border2); color: var(--text); background: var(--surface2); }
+  .btn-green {
+    background: var(--green);
+    color: #080a0f;
+  }
+  .btn-green:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-green:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .btn-row { display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; align-items: center; }
+
+  /* AI Contract display */
+  .contract-box {
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    color: var(--text2);
+    white-space: pre-wrap;
+    max-height: 360px;
+    overflow-y: auto;
+    margin: 20px 0;
+  }
+  .contract-box::-webkit-scrollbar { width: 4px; }
+  .contract-box::-webkit-scrollbar-track { background: transparent; }
+  .contract-box::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+  /* Key display */
+  .key-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .key-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .key-party { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); font-weight: 500; }
+  .key-name { font-size: 0.875rem; color: var(--text); }
+  .key-field { margin-bottom: 10px; }
+  .key-label { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text3); margin-bottom: 4px; }
+  .key-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--green);
+    background: var(--green-dim);
+    border: 1px solid rgba(62,207,142,0.15);
+    border-radius: 6px;
+    padding: 8px 12px;
+    word-break: break-all;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .key-value.private { color: var(--gold); background: var(--gold-dim); border-color: rgba(201,168,76,0.15); }
+  .copy-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text3);
+    font-size: 0.8rem;
+    padding: 2px;
+    flex-shrink: 0;
+    transition: color 0.2s;
+  }
+  .copy-btn:hover { color: var(--text); }
+
+  /* Escrow address */
+  .escrow-address-block {
+    background: var(--bg);
+    border: 1px solid var(--gold);
+    border-radius: 10px;
+    padding: 24px;
+    text-align: center;
+    margin: 20px 0;
+  }
+  .escrow-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 10px; }
+  .escrow-addr {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    color: var(--text);
+    word-break: break-all;
+    margin-bottom: 8px;
+  }
+  .escrow-amount { font-size: 0.875rem; color: var(--text2); }
+  .btc-amount { color: var(--gold2); font-weight: 500; font-family: 'JetBrains Mono', monospace; }
+
+  /* Warning box */
+  .warning {
+    background: rgba(245,101,101,0.07);
+    border: 1px solid rgba(245,101,101,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 0.8rem;
+    color: #f08080;
+    line-height: 1.5;
+    margin: 16px 0;
+  }
+  .info-box {
+    background: var(--gold-dim);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 0.8rem;
+    color: var(--gold);
+    line-height: 1.5;
+    margin: 16px 0;
+  }
+  .success-box {
+    background: var(--green-dim);
+    border: 1px solid rgba(62,207,142,0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 0.8rem;
+    color: var(--green);
+    line-height: 1.5;
+    margin: 16px 0;
+  }
+
+  /* Release section */
+  .release-section {
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+    margin-top: 24px;
+  }
+  .release-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  /* Signature status */
+  .sig-status { display: flex; gap: 12px; margin: 16px 0; flex-wrap: wrap; }
+  .sig-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border: 1px solid var(--border2);
+    color: var(--text3);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .sig-chip.signed { border-color: rgba(62,207,142,0.4); color: var(--green); background: var(--green-dim); }
+  .sig-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+  /* Loading spinner */
+  .spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(201,168,76,0.2);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    vertical-align: middle;
+    margin-right: 8px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Fade in */
+  .fade-in { animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* Section hidden */
+  .hidden { display: none !important; }
+
+  /* Divider */
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  /* Notice banner */
+  .demo-notice {
+    font-size: 0.75rem;
+    color: var(--text3);
+    text-align: center;
+    margin-top: 32px;
+    line-height: 1.6;
+    padding: 0 20px;
+  }
+  .demo-notice a { color: var(--gold); text-decoration: none; }
+
+  /* Tab for parties to enter keys */
+  .party-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+  .ptab {
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.2s;
+  }
+  .ptab.active { background: var(--gold-dim); border-color: var(--gold); color: var(--gold); }
+
+  /* Status badge */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .badge-pending { background: rgba(138,155,181,0.1); color: var(--text2); border: 1px solid var(--border2); }
+  .badge-funded { background: var(--green-dim); color: var(--green); border: 1px solid rgba(62,207,142,0.2); }
+
+  /* Summary table */
+  .summary-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 0.875rem; }
+  .summary-row:last-child { border-bottom: none; }
+  .summary-key { color: var(--text2); }
+  .summary-val { color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; text-align: right; max-width: 60%; word-break: break-all; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="logo">Bet<span>Lock</span></div>
+    <div class="tagline">Trustless Bitcoin Escrow · 2-of-2 Multisig</div>
+  </header>
+
+  <!-- Step Indicator -->
+  <div class="steps">
+    <div class="step-item">
+      <div class="step-dot active" id="dot-1">1</div>
+      <div class="step-label active" id="lbl-1">Parties</div>
+    </div>
+    <div class="step-line" id="line-1"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot-2">2</div>
+      <div class="step-label" id="lbl-2">Contract</div>
+    </div>
+    <div class="step-line" id="line-2"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot-3">3</div>
+      <div class="step-label" id="lbl-3">Keys</div>
+    </div>
+    <div class="step-line" id="line-3"></div>
+    <div class="step-item">
+      <div class="step-dot" id="dot-4">4</div>
+      <div class="step-label" id="lbl-4">Escrow</div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 1: Parties ─── -->
+  <div id="step1" class="card fade-in">
+    <div class="card-title">Set Up the Bet</div>
+    <div class="card-sub">Enter details for both parties. Each will receive a unique private key to co-sign the release of funds.</div>
+
+    <div class="grid2">
+      <div class="party-block">
+        <div class="party-label">⬡ Party A</div>
+        <div class="field"><label>Full Name</label><input id="a-name" placeholder="Alice Smith" /></div>
+        <div class="field"><label>Email (for key delivery)</label><input id="a-email" type="email" placeholder="alice@example.com" /></div>
+        <div class="field"><label>BTC Payout Address <span style="color:var(--text3)">(optional)</span></label><input id="a-btc" placeholder="bc1q..." /></div>
+      </div>
+      <div class="party-block">
+        <div class="party-label">⬡ Party B</div>
+        <div class="field"><label>Full Name</label><input id="b-name" placeholder="Bob Jones" /></div>
+        <div class="field"><label>Email (for key delivery)</label><input id="b-email" type="email" placeholder="bob@example.com" /></div>
+        <div class="field"><label>BTC Payout Address <span style="color:var(--text3)">(optional)</span></label><input id="b-btc" placeholder="bc1q..." /></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="field-full">
+      <label>Describe the bet or agreement</label>
+      <textarea id="bet-desc" placeholder="e.g. Alice bets Bob that Bitcoin will exceed $150,000 by December 31st 2025. If correct, Alice receives the full escrow amount. If not, Bob does." rows="4"></textarea>
+    </div>
+    <div class="field-full">
+      <label>Total BTC amount to escrow</label>
+      <input id="btc-amount" placeholder="0.01" style="max-width:200px"/>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="goStep2()">Draft Contract →</button>
+    </div>
+  </div>
+
+  <!-- ─── STEP 2: Contract ─── -->
+  <div id="step2" class="card fade-in hidden">
+    <div class="card-title">AI-Drafted Contract</div>
+    <div class="card-sub">Claude has formalised your agreement into a binding escrow contract. Review before proceeding.</div>
+
+    <div id="contract-loading" style="text-align:center;padding:40px 0;color:var(--text2)">
+      <span class="spinner"></span> Drafting contract terms…
+    </div>
+    <div id="contract-box" class="contract-box hidden"></div>
+
+    <div id="contract-actions" class="hidden">
+      <div class="info-box">⚡ This contract is generated by Claude AI. Review carefully. Both parties should confirm they agree before generating keys.</div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="goStep1()">← Back</button>
+        <button class="btn btn-primary" onclick="goStep3()">Both Agree — Generate Keys →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── STEP 3: Keys ─── -->
+  <div id="step3" class="card fade-in hidden">
+    <div class="card-title">Escrow Keys Generated</div>
+    <div class="card-sub">A 2-of-2 multisig escrow address has been created. Each party holds one key — <strong>both are required to release funds</strong>. Store your private key securely.</div>
+
+    <div class="warning">⚠ Private keys are shown once. Copy them now — they cannot be recovered. In production, these would be emailed and immediately discarded from the server.</div>
+
+    <div id="keys-container"></div>
+
+    <div class="divider"></div>
+
+    <div class="escrow-address-block">
+      <div class="escrow-label">2-of-2 Multisig Escrow Address</div>
+      <div class="escrow-addr" id="escrow-addr">—</div>
+      <div class="escrow-amount">Send exactly <span class="btc-amount" id="escrow-btc-amount">—</span> BTC to this address</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goStep2()">← Back</button>
+      <button class="btn btn-primary" onclick="goStep4()">Address Funded → Release →</button>
+    </div>
+  </div>
+
+  <!-- ─── STEP 4: Escrow & Release ─── -->
+  <div id="step4" class="card fade-in hidden">
+    <div class="card-title">Escrow Active</div>
+    <div class="card-sub">The contract is live. Both parties must sign to release the funds to the winner.</div>
+
+    <!-- Contract summary -->
+    <div style="margin-bottom:20px">
+      <div class="summary-row">
+        <span class="summary-key">Parties</span>
+        <span class="summary-val" id="s-parties">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-key">Escrow Amount</span>
+        <span class="summary-val" id="s-amount">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-key">Escrow Address</span>
+        <span class="summary-val" id="s-addr" style="font-size:0.72rem">—</span>
+      </div>
+      <div class="summary-row">
+        <span class="summary-key">Status</span>
+        <span class="summary-val"><span class="badge badge-pending" id="s-status">● Awaiting Resolution</span></span>
+      </div>
+    </div>
+
+    <div class="release-section">
+      <div class="release-title">Release Funds</div>
+      <div style="color:var(--text2);font-size:0.875rem;margin-bottom:16px">Both parties must enter their private keys below to construct and broadcast the release transaction. Enter the recipient's BTC address to direct payment.</div>
+
+      <div class="field-full">
+        <label>Recipient BTC Address (winner's address)</label>
+        <input id="release-to" placeholder="bc1q..." />
+      </div>
+
+      <div class="party-tabs">
+        <button class="ptab active" onclick="switchPartyTab('a')">Party A Key</button>
+        <button class="ptab" onclick="switchPartyTab('b')">Party B Key</button>
+      </div>
+
+      <div id="tab-a">
+        <div class="field-full">
+          <label>Party A Private Key (WIF)</label>
+          <input id="release-key-a" placeholder="Paste private key..." type="password" autocomplete="off" />
+        </div>
+        <button class="btn btn-ghost" onclick="signParty('a')">Sign as Party A</button>
+      </div>
+
+      <div id="tab-b" class="hidden">
+        <div class="field-full">
+          <label>Party B Private Key (WIF)</label>
+          <input id="release-key-b" placeholder="Paste private key..." type="password" autocomplete="off" />
+        </div>
+        <button class="btn btn-ghost" onclick="signParty('b')">Sign as Party B</button>
+      </div>
+
+      <div class="sig-status" style="margin-top:16px">
+        <div class="sig-chip" id="chip-a"><span class="dot"></span> <span id="chip-a-name">Party A</span>: Unsigned</div>
+        <div class="sig-chip" id="chip-b"><span class="dot"></span> <span id="chip-b-name">Party B</span>: Unsigned</div>
+      </div>
+
+      <div id="release-error" class="warning hidden"></div>
+      <div id="release-success" class="hidden">
+        <div class="success-box" id="release-success-msg">✓ Transaction constructed successfully.</div>
+        <div style="margin-top:12px">
+          <label style="display:block;font-size:0.78rem;color:var(--text2);margin-bottom:6px">Signed Raw Transaction (broadcast via your Bitcoin node or mempool.space)</label>
+          <div class="key-value" id="raw-tx" style="word-break:break-all;font-size:0.7rem;line-height:1.5">—</div>
+        </div>
+      </div>
+
+      <div style="margin-top:20px">
+        <button class="btn btn-green" id="broadcast-btn" disabled onclick="broadcastTx()">Broadcast Transaction</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="demo-notice">
+    ⚡ <strong>BetLock</strong> is a prototype demonstration. Bitcoin cryptography is simulated for browser compatibility.<br>
+    Production deployment requires a Node.js backend with <code>bitcoinjs-lib</code>, real secp256k1 signing, and a transaction broadcast endpoint.<br>
+    Smart contract terms generated by <a href="#">Claude AI</a>. Not legal advice.
+  </div>
+
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────
+const state = {
+  partyA: {}, partyB: {},
+  betDescription: '', btcAmount: '',
+  contractText: '',
+  keyA: { wif: '', pub: '' },
+  keyB: { wif: '', pub: '' },
+  escrowAddress: '',
+  sigA: false, sigB: false,
+  currentStep: 1
+};
+
+// ─────────────────────────────────────────
+// BASE58 / WIF encoding
+// ─────────────────────────────────────────
+const B58 = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+
+function b58encode(bytes) {
+  let leading = 0;
+  for (const b of bytes) { if (b === 0) leading++; else break; }
+  let n = 0n;
+  for (const b of bytes) n = n * 256n + BigInt(b);
+  let result = '';
+  while (n > 0n) {
+    const rem = Number(n % 58n);
+    n = n / 58n;
+    result = B58[rem] + result;
+  }
+  return '1'.repeat(leading) + result;
+}
+
+async function sha256(data) {
+  return new Uint8Array(await crypto.subtle.digest('SHA-256', data));
+}
+
+async function toWIF(keyBytes) {
+  const payload = new Uint8Array([0x80, ...keyBytes, 0x01]);
+  const h1 = await sha256(payload);
+  const h2 = await sha256(h1);
+  const final = new Uint8Array([...payload, ...h2.slice(0, 4)]);
+  return b58encode(final);
+}
+
+// Simulate compressed public key from private key bytes (not real secp256k1)
+async function toPubKeyHex(keyBytes) {
+  const h = await sha256(new Uint8Array([0x02, ...keyBytes]));
+  return '02' + Array.from(h).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+// Generate P2WSH-like bech32 address (simulated — uses HASH256 of redeem script)
+async function genMultisigAddress(pub1, pub2) {
+  const bech32chars = 'qpzry9x8gf2tvdw0s3jn54khce6mua7l';
+  const combined = new Uint8Array([
+    ...hexToBytes(pub1),
+    ...hexToBytes(pub2)
+  ]);
+  const h = await sha256(combined);
+  let addr = 'bc1q';
+  for (let i = 0; i < 38; i++) {
+    addr += bech32chars[h[i % 32] % 32];
+  }
+  return addr;
+}
+
+function hexToBytes(hex) {
+  const arr = [];
+  for (let i = 0; i < hex.length; i += 2) arr.push(parseInt(hex.slice(i, i + 2), 16));
+  return arr;
+}
+
+async function generateKeypair() {
+  const privBytes = crypto.getRandomValues(new Uint8Array(32));
+  const wif = await toWIF(privBytes);
+  const pub = await toPubKeyHex(privBytes);
+  return { wif, pub };
+}
+
+// ─────────────────────────────────────────
+// STEP NAVIGATION
+// ─────────────────────────────────────────
+function setStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById(`step${i}`).classList.toggle('hidden', i !== n);
+  });
+  state.currentStep = n;
+  updateStepUI(n);
+}
+
+function updateStepUI(active) {
+  [1,2,3,4].forEach(i => {
+    const dot = document.getElementById(`dot-${i}`);
+    const lbl = document.getElementById(`lbl-${i}`);
+    dot.className = 'step-dot ' + (i < active ? 'done' : i === active ? 'active' : '');
+    lbl.className = 'step-label ' + (i === active ? 'active' : '');
+    if (i < 4) {
+      const line = document.getElementById(`line-${i}`);
+      line.className = 'step-line ' + (i < active ? 'done' : '');
+    }
+  });
+}
+
+function goStep1() { setStep(1); }
+
+function goStep2() {
+  const aName = document.getElementById('a-name').value.trim();
+  const bName = document.getElementById('b-name').value.trim();
+  const desc = document.getElementById('bet-desc').value.trim();
+  const amt = document.getElementById('btc-amount').value.trim();
+  if (!aName || !bName || !desc || !amt) {
+    alert('Please fill in all required fields.');
+    return;
+  }
+  state.partyA = {
+    name: aName,
+    email: document.getElementById('a-email').value.trim(),
+    btc: document.getElementById('a-btc').value.trim()
+  };
+  state.partyB = {
+    name: bName,
+    email: document.getElementById('b-email').value.trim(),
+    btc: document.getElementById('b-btc').value.trim()
+  };
+  state.betDescription = desc;
+  state.btcAmount = amt;
+  setStep(2);
+  draftContract();
+}
+
+async function goStep3() {
+  setStep(3);
+  await generateEscrow();
+}
+
+function goStep4() {
+  setStep(4);
+  document.getElementById('s-parties').textContent = `${state.partyA.name} & ${state.partyB.name}`;
+  document.getElementById('s-amount').textContent = `${state.btcAmount} BTC`;
+  document.getElementById('s-addr').textContent = state.escrowAddress;
+  document.getElementById('chip-a-name').textContent = state.partyA.name;
+  document.getElementById('chip-b-name').textContent = state.partyB.name;
+}
+
+// ─────────────────────────────────────────
+// CLAUDE API — DRAFT CONTRACT
+// ─────────────────────────────────────────
+async function draftContract() {
+  document.getElementById('contract-loading').classList.remove('hidden');
+  document.getElementById('contract-box').classList.add('hidden');
+  document.getElementById('contract-actions').classList.add('hidden');
+
+  const prompt = `You are a legal contract drafter. Create a formal Bitcoin escrow smart contract agreement between two parties.
+
+Party A: ${state.partyA.name} (${state.partyA.email || 'no email'})
+Party B: ${state.partyB.name} (${state.partyB.email || 'no email'})
+Escrow Amount: ${state.btcAmount} BTC
+Agreement Description: ${state.betDescription}
+
+Draft a clear, professional escrow contract that includes:
+1. Identification of both parties
+2. The exact terms of the agreement and win condition
+3. Escrow mechanism (2-of-2 multisig Bitcoin wallet)
+4. How funds are released (both parties must co-sign)
+5. Dispute resolution clause
+6. Date of agreement
+7. Acknowledgement that this is a voluntary agreement
+
+Keep it concise but legally precise. Use plain English. Include a signature section at the bottom.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content?.map(c => c.text || '').join('') || 'Unable to generate contract.';
+    state.contractText = text;
+    document.getElementById('contract-box').textContent = text;
+    document.getElementById('contract-loading').classList.add('hidden');
+    document.getElementById('contract-box').classList.remove('hidden');
+    document.getElementById('contract-actions').classList.remove('hidden');
+  } catch (err) {
+    state.contractText = `BITCOIN ESCROW AGREEMENT\n\nThis agreement is entered into between ${state.partyA.name} ("Party A") and ${state.partyB.name} ("Party B").\n\nEscrow Amount: ${state.btcAmount} BTC\n\nTerms: ${state.betDescription}\n\nThis escrow is secured by a 2-of-2 multisig Bitcoin wallet. Funds shall only be released upon co-signature from both parties.\n\n[Contract generation unavailable — using template]`;
+    document.getElementById('contract-box').textContent = state.contractText;
+    document.getElementById('contract-loading').classList.add('hidden');
+    document.getElementById('contract-box').classList.remove('hidden');
+    document.getElementById('contract-actions').classList.remove('hidden');
+  }
+}
+
+// ─────────────────────────────────────────
+// GENERATE ESCROW KEYS & ADDRESS
+// ─────────────────────────────────────────
+async function generateEscrow() {
+  const kA = await generateKeypair();
+  const kB = await generateKeypair();
+  state.keyA = kA;
+  state.keyB = kB;
+  state.escrowAddress = await genMultisigAddress(kA.pub, kB.pub);
+
+  const container = document.getElementById('keys-container');
+  container.innerHTML = '';
+
+  for (const [party, key, label] of [
+    [state.partyA, kA, 'Party A'],
+    [state.partyB, kB, 'Party B']
+  ]) {
+    container.innerHTML += `
+      <div class="key-card">
+        <div class="key-header">
+          <div>
+            <div class="key-party">⬡ ${label}</div>
+            <div class="key-name">${party.name}${party.email ? ' · ' + party.email : ''}</div>
+          </div>
+        </div>
+        <div class="key-field">
+          <div class="key-label">Public Key</div>
+          <div class="key-value">
+            <span>${key.pub}</span>
+            <button class="copy-btn" onclick="copyText('${key.pub}', this)" title="Copy">⎘</button>
+          </div>
+        </div>
+        <div class="key-field">
+          <div class="key-label">Private Key (WIF) — Keep secret!</div>
+          <div class="key-value private">
+            <span>${key.wif}</span>
+            <button class="copy-btn" onclick="copyText('${key.wif}', this)" title="Copy">⎘</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  document.getElementById('escrow-addr').textContent = state.escrowAddress;
+  document.getElementById('escrow-btc-amount').textContent = state.btcAmount;
+}
+
+// ─────────────────────────────────────────
+// RELEASE MECHANISM
+// ─────────────────────────────────────────
+function switchPartyTab(p) {
+  document.getElementById('tab-a').classList.toggle('hidden', p !== 'a');
+  document.getElementById('tab-b').classList.toggle('hidden', p !== 'b');
+  document.querySelectorAll('.ptab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && p === 'a') || (i === 1 && p === 'b'));
+  });
+}
+
+function signParty(p) {
+  const keyInput = document.getElementById(`release-key-${p}`).value.trim();
+  const expected = p === 'a' ? state.keyA.wif : state.keyB.wif;
+
+  if (!keyInput) {
+    showReleaseError('Please paste your private key.');
+    return;
+  }
+  if (keyInput !== expected) {
+    showReleaseError(`Invalid key for ${p === 'a' ? state.partyA.name : state.partyB.name}. Key does not match the escrow record.`);
+    return;
+  }
+
+  hideReleaseError();
+  if (p === 'a') {
+    state.sigA = true;
+    const chip = document.getElementById('chip-a');
+    chip.className = 'sig-chip signed';
+    chip.innerHTML = `<span class="dot"></span> <span>${state.partyA.name}</span>: ✓ Signed`;
+  } else {
+    state.sigB = true;
+    const chip = document.getElementById('chip-b');
+    chip.className = 'sig-chip signed';
+    chip.innerHTML = `<span class="dot"></span> <span>${state.partyB.name}</span>: ✓ Signed`;
+  }
+
+  if (state.sigA && state.sigB) {
+    constructTransaction();
+  }
+}
+
+async function constructTransaction() {
+  const to = document.getElementById('release-to').value.trim();
+  if (!to) {
+    showReleaseError('Please enter the recipient BTC address before signing.');
+    return;
+  }
+
+  // Simulate raw transaction construction
+  const mockTx = await buildMockTx(state.escrowAddress, to, state.btcAmount, state.keyA.wif, state.keyB.wif);
+
+  document.getElementById('release-success').classList.remove('hidden');
+  document.getElementById('release-success-msg').textContent =
+    `✓ Both parties have signed. Transaction constructed. Send ${state.btcAmount} BTC to ${to.slice(0,10)}...`;
+  document.getElementById('raw-tx').textContent = mockTx;
+  document.getElementById('broadcast-btn').disabled = false;
+  document.getElementById('s-status').className = 'badge badge-funded';
+  document.getElementById('s-status').textContent = '● Ready to Broadcast';
+}
+
+async function buildMockTx(from, to, amount, wifA, wifB) {
+  // Simulated raw transaction hex (not real Bitcoin serialization)
+  const combined = new TextEncoder().encode(from + to + amount + wifA + wifB);
+  const h = await sha256(combined);
+  const txid = Array.from(h).map(b => b.toString(16).padStart(2, '0')).join('');
+  const fakeScript = Array.from(crypto.getRandomValues(new Uint8Array(72))).map(b => b.toString(16).padStart(2,'0')).join('');
+  return `01000000${txid}0000000001${fakeScript}ffffffff`;
+}
+
+function broadcastTx() {
+  const rawTx = document.getElementById('raw-tx').textContent;
+  const mempoolUrl = `https://mempool.space/tx/push#${encodeURIComponent(rawTx.slice(0, 40))}...`;
+  alert(`In production, this transaction would be broadcast to the Bitcoin network.\n\nYou can broadcast via:\n• mempool.space/tx/push\n• Your own Bitcoin node (bitcoin-cli sendrawtransaction)\n• A Bitcoin API service\n\nRaw TX (first 40 chars): ${rawTx.slice(0, 40)}...`);
+}
+
+// ─────────────────────────────────────────
+// UTILS
+// ─────────────────────────────────────────
+function copyText(text, btn) {
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✓';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = orig; btn.style.color = ''; }, 1500);
+  });
+}
+
+function showReleaseError(msg) {
+  const el = document.getElementById('release-error');
+  el.textContent = '⚠ ' + msg;
+  el.classList.remove('hidden');
+}
+function hideReleaseError() {
+  document.getElementById('release-error').classList.add('hidden');
+}
+
+// Init
+updateStepUI(1);
+</script>
+</body>
+</html>
