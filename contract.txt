@@ -1,0 +1,317 @@
+SHARE PURCHASE & INTELLECTUAL PROPERTY ASSIGNMENT AGREEMENT
+BETLOCK — 50% EQUITY SALE & SMART CONTRACT RIGHTS TRANSFER
+
+THIS AGREEMENT
+This Share Purchase & Intellectual Property Assignment Agreement (“Agreement”) is entered into on this ___ day of __________ 20___
+BETWEEN:
+BTCPhilosopher
+(the “Seller”)
+AND
+__________________________________
+(the “Purchaser”)
+
+1. RECITALS
+WHEREAS the Seller is the sole creator, architect, and beneficial owner of the software platform and smart contract escrow system known as BETLOCK, including but not limited to:
+
+
+all source code,
+
+
+HTML, CSS, JavaScript and frontend systems,
+
+
+escrow architecture,
+
+
+multisignature transaction logic,
+
+
+interface systems,
+
+
+branding,
+
+
+designs,
+
+
+business concepts,
+
+
+intellectual property,
+
+
+documentation,
+
+
+cryptographic implementation concepts,
+
+
+platform workflows,
+
+
+AI-assisted contract systems,
+
+
+and all derivative materials associated with BETLOCK;
+
+
+AND WHEREAS the Purchaser wishes to acquire fifty percent (50%) ownership and economic interest in BETLOCK;
+NOW THEREFORE the parties agree as follows:
+
+2. SALE OF EQUITY INTEREST
+The Seller hereby sells, assigns, and transfers to the Purchaser:
+FIFTY PERCENT (50%) OWNERSHIP INTEREST
+in and to BETLOCK, including:
+
+
+50% beneficial ownership,
+
+
+50% economic rights,
+
+
+50% profit participation,
+
+
+50% licensing rights,
+
+
+50% revenue entitlement,
+
+
+and 50% ownership of all related intellectual property and commercial exploitation rights.
+
+
+The remaining 50% ownership shall remain with the Seller.
+
+3. PURCHASE PRICE
+The total consideration for the transfer described herein shall be:
+£500,000 GBP
+(Five Hundred Thousand Pounds Sterling)
+payable by the Purchaser to the Seller.
+
+4. BITCOIN PAYMENT TERMS
+Payment shall be made in Bitcoin (BTC) to the following wallet address controlled by the Seller:
+Bitcoin Address
+bitcoin:bc1qzjm9njrcmqsvd50r3wsl9fmu474f08r0zmm0mflzlylgd8eduywsln6uz5?amount=8.53313381&message=BetLock%20Equity&time=1778259262&exp=604800
+Payment shall be deemed received once the Bitcoin transaction has obtained a minimum of three (3) network confirmations on the Bitcoin blockchain.
+Upon confirmation of payment:
+
+
+ownership rights shall immediately vest in the Purchaser,
+
+
+the Agreement shall become fully executed,
+
+
+and the transfer of the 50% equity interest shall be deemed complete.
+
+
+
+5. INTELLECTUAL PROPERTY RIGHTS
+The parties acknowledge that BETLOCK includes proprietary intellectual property, including but not limited to:
+
+
+source code,
+
+
+escrow transaction logic,
+
+
+multisignature architecture,
+
+
+user interface systems,
+
+
+cryptographic concepts,
+
+
+branding,
+
+
+commercial systems,
+
+
+smart contract workflows,
+
+
+legal escrow logic,
+
+
+visual design,
+
+
+software architecture,
+
+
+and future derivative developments.
+
+
+The Purchaser shall receive a 50% undivided ownership interest in all such intellectual property.
+
+6. RIGHTS OF THE PARTIES
+Following completion of the transaction:
+The Purchaser shall have:
+
+
+50% ownership rights,
+
+
+50% participation in profits,
+
+
+rights to participate in strategic decisions,
+
+
+rights to commercial exploitation,
+
+
+rights to licensing revenues,
+
+
+and rights to future sale participation.
+
+
+The Seller shall retain:
+
+
+50% ownership rights,
+
+
+co-control of future development,
+
+
+co-ownership of all derivatives,
+
+
+and equal participation in future monetisation.
+
+
+Neither party may sell the entirety of BETLOCK without written consent of the other.
+
+7. WARRANTIES
+The Seller warrants that:
+
+
+the Seller is the lawful creator and owner of BETLOCK;
+
+
+the Seller possesses the authority to transfer the rights described herein;
+
+
+to the Seller’s knowledge, the intellectual property does not knowingly infringe third-party rights.
+
+
+The Purchaser acknowledges that:
+
+
+BETLOCK is experimental financial technology software;
+
+
+cryptocurrency systems involve inherent technical and regulatory risks;
+
+
+and the Purchaser has conducted independent evaluation prior to purchase.
+
+
+
+8. NO REGULATORY GUARANTEE
+The parties acknowledge that cryptocurrency regulations vary by jurisdiction.
+No representation is made that BETLOCK complies with all regulatory frameworks worldwide.
+Compliance obligations following acquisition shall be jointly borne by the parties.
+
+9. CONFIDENTIALITY
+Both parties agree to maintain confidentiality regarding:
+
+
+private source code,
+
+
+cryptographic implementations,
+
+
+unpublished systems,
+
+
+escrow methodologies,
+
+
+security architecture,
+
+
+commercial negotiations,
+
+
+and proprietary business information.
+
+
+
+10. GOVERNING LAW
+This Agreement shall be governed by and construed in accordance with the laws of England and Wales.
+Any disputes arising under this Agreement shall be subject to the exclusive jurisdiction of the courts of England and Wales.
+
+11. ENTIRE AGREEMENT
+This document constitutes the entire agreement between the parties regarding the subject matter herein and supersedes all prior discussions, negotiations, or understandings.
+
+12. EXECUTION
+By signing below, the parties acknowledge that they:
+
+
+understand this Agreement,
+
+
+voluntarily enter into it,
+
+
+and agree to be legally bound by its terms.
+
+
+
+SELLER
+Name: BTCPhilosopher
+Signature: _______________________________
+Date: ___________________
+
+PURCHASER
+Name: __________________________________
+Signature: _______________________________
+Date: ___________________
+
+BITCOIN PAYMENT CONFIRMATION
+Transaction ID (TXID): __________________________________
+Amount Received: _______________________________________
+Date Confirmed: ________________________________________
+Network Confirmations: _________________________________
+Confirmed By: _________________________________________
+
+SCHEDULE A — DESCRIPTION OF BETLOCK
+BETLOCK is a Bitcoin escrow and smart contract platform featuring:
+
+
+trustless escrow workflows,
+
+
+multisignature transaction systems,
+
+
+browser-based escrow execution,
+
+
+AI-generated legal agreements,
+
+
+cryptographic key generation,
+
+
+Bitcoin transaction construction systems,
+
+
+smart contract release logic,
+
+
+and Anglo-futurist financial interface architecture.
+
+
+The platform includes all associated codebases, frontend systems, smart contract implementations, documentation, and derivative intellectual property connected to BETLOCK.
